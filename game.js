@@ -42,6 +42,8 @@ const State = {
   powerups: [],
   boulders: [],
   boulderCooldowns: [],
+  lineObstacles: [],
+  lineObstacleCooldowns: [],
   activePowerup: null,
   trackOffset: 0
 };
@@ -125,6 +127,21 @@ function spawnBoulder(){
   };
 }
 
+function spawnLineObstacle(){
+  const laneWidth = (vw - State.lanePadding * 2) / State.laneCount;
+  const boundaryCount = State.laneCount + 1;
+  const i = Math.floor(rand(0, boundaryCount));
+  if (State.time < (State.lineObstacleCooldowns[i] || 0)) return null;
+  const w = rand(10, 18), h = rand(30, 48);
+  const lineX = Math.floor(State.lanePadding + i * laneWidth) + 0.5;
+  return {
+    type: 'line-obstacle', i,
+    x: lineX - w/2,
+    y: -60,
+    w, h
+  };
+}
+
 function resetGame(){
   State.isRunning = false;
   State.isGameOver = false;
@@ -140,9 +157,11 @@ function resetGame(){
   State.powerups.length = 0;
   State.particles.length = 0;
   State.boulders.length = 0;
+  State.lineObstacles.length = 0;
   State.activePowerup = null;
   State.trackOffset = 0;
   State.boulderCooldowns = new Array(State.laneCount + 1).fill(0);
+  State.lineObstacleCooldowns = new Array(State.laneCount + 1).fill(0);
 }
 
 resetGame();
@@ -273,6 +292,14 @@ function update(dt){
       State.boulderCooldowns[b.i] = State.time + rand(1.6, 3.2);
     }
   }
+  // Thin line obstacles on boundaries to add extra danger on lines
+  if (Math.random() < 0.45 * dt){
+    const lo = spawnLineObstacle();
+    if (lo){
+      State.lineObstacles.push(lo);
+      State.lineObstacleCooldowns[lo.i] = State.time + rand(1.2, 2.0);
+    }
+  }
 
   // Move entities
   const roadVy = State.speed; // world moves downward
@@ -280,6 +307,7 @@ function update(dt){
   for (const r of State.rivals){ r.y += (roadVy + r.vy) * dt; }
   for (const u of State.powerups){ u.y += roadVy * dt; }
   for (const b of State.boulders){ b.y += roadVy * dt; }
+  for (const lo of State.lineObstacles){ lo.y += roadVy * dt; }
   // Particles
   for (const part of State.particles){
     part.y += part.vy * dt;
@@ -292,6 +320,7 @@ function update(dt){
   State.rivals = State.rivals.filter(r => r.y > -120);
   State.powerups = State.powerups.filter(u => u.y < vh + 60);
   State.boulders = State.boulders.filter(b => b.y < vh + 60);
+  State.lineObstacles = State.lineObstacles.filter(lo => lo.y < vh + 60);
 
   // Overtakes scoring
   for (const r of State.rivals){
@@ -315,6 +344,9 @@ function update(dt){
     }
     for (const b of State.boulders){
       if (aabb(p, b)) return gameOver();
+    }
+    for (const lo of State.lineObstacles){
+      if (aabb(p, lo)) return gameOver();
     }
   }
 
@@ -390,6 +422,7 @@ function render(){
   for (const r of State.rivals) drawRival(r);
   for (const u of State.powerups) drawPowerup(u);
   for (const b of State.boulders) drawBoulder(b);
+  for (const lo of State.lineObstacles) drawLineObstacle(lo);
   drawParticles();
 
   drawCenterVignette();
@@ -408,6 +441,19 @@ function drawBoulder(b){
   ctx.lineWidth = 1.5;
   ctx.beginPath();
   ctx.arc(b.x + b.r, b.y + b.r, b.r + 1, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.restore();
+}
+
+function drawLineObstacle(lo){
+  ctx.save();
+  ctx.fillStyle = 'rgba(0,255,240,0.85)';
+  roundRect(lo.x, lo.y, lo.w, lo.h, 3);
+  ctx.fill();
+  // inner highlight
+  ctx.strokeStyle = 'rgba(0,255,240,0.9)';
+  ctx.lineWidth = 1;
+  roundRect(lo.x + 1, lo.y + 1, lo.w - 2, lo.h - 2, 2);
   ctx.stroke();
   ctx.restore();
 }
