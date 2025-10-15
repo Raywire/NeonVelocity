@@ -393,6 +393,7 @@ function render(){
   drawParticles();
 
   drawCenterVignette();
+  drawLiveScore();
   drawStartOrGameOverText();
 }
 
@@ -408,6 +409,18 @@ function drawBoulder(b){
   ctx.beginPath();
   ctx.arc(b.x + b.r, b.y + b.r, b.r + 1, 0, Math.PI * 2);
   ctx.stroke();
+  ctx.restore();
+}
+
+function drawLiveScore(){
+  if (!State.isRunning) return;
+  ctx.save();
+  ctx.textAlign = 'center';
+  ctx.font = '800 22px Orbitron, sans-serif';
+  ctx.fillStyle = 'rgba(255,255,255,0.95)';
+  ctx.shadowColor = 'rgba(0,255,240,0.6)';
+  ctx.shadowBlur = 10;
+  ctx.fillText(`Score ${State.score}`, vw/2, 36);
   ctx.restore();
 }
 
