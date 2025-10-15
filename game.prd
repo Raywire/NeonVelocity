@@ -1,0 +1,37 @@
+# Product Requirements Document: Neon Velocity
+
+## 1. Vision & Objectives
+Create a fast-paced, browser-based racing game set in a neon cyberpunk world where players dodge obstacles and overtake rivals as speed intensifies.
+
+## 2. User Stories
+- As a player, I want to control a futuristic racer so that I can experience high-speed thrills.
+- As a player, I want the game to get harder with each level so that I stay challenged.
+- As a player, I want to collect power-ups so that I can gain advantages during races.
+- As a player, I want to see my score and rank so that I can compete with others.
+- As a player, I want short game sessions so that I can play casually during breaks.
+
+## 3. Feature List
+
+### MVP Features
+- Basic racing mechanics (movement, speed increase)
+- Obstacle generation
+- Power-ups (Turbo Boost, Ghost Phase)
+- Score tracking
+
+### Stretch Goals
+- Leaderboard system
+- AI rival racers
+- Customizable vehicles
+- Sound effects and music
+
+## 4. Success Metrics
+- Players complete at least 3 levels per session
+- Average session time is under 5 minutes
+- 70% of players return to play again
+- Positive feedback on game feel and visuals
+
+## 5. Constraints or Assumptions
+- Must run smoothly in modern browsers
+- No login or account system required
+- Game should be playable with keyboard or touch controls
+- Art style must be lightweight (SVG/CSS-based)
