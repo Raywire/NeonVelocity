@@ -16,6 +16,7 @@ window.addEventListener('resize', resizeCanvas);
 resizeCanvas();
 
 const hudScore = document.getElementById('score');
+const hudHigh = document.getElementById('highscore');
 const hudOvertakes = document.getElementById('overtakes');
 const hudSpeed = document.getElementById('speed');
 const hudLevel = document.getElementById('level');
@@ -27,6 +28,7 @@ const State = {
   isGameOver: false,
   time: 0,
   score: 0,
+  highScore: 0,
   overtakes: 0,
   level: 1,
   baseSpeed: 380, // px/s
@@ -108,6 +110,7 @@ function resetGame(){
   State.isGameOver = false;
   State.time = 0;
   State.score = 0;
+  State.highScore = Number(localStorage.getItem('neon-velocity:highScore')||0);
   State.overtakes = 0;
   State.level = 1;
   State.speed = 0;
@@ -270,6 +273,7 @@ function update(dt){
       State.powerups.splice(i,1);
       if (u.kind === 'turbo') p.turboUntil = State.time + 3;
       if (u.kind === 'ghost') p.ghostUntil = State.time + 3;
+      State.score += 50; // reward pickups
     }
   }
 
@@ -299,7 +303,14 @@ function update(dt){
   }
 
   // HUD
+  // passive score: distance and speed factor
+  State.score += Math.floor(State.speed * 0.04);
+  if (State.score > State.highScore){
+    State.highScore = State.score;
+    localStorage.setItem('neon-velocity:highScore', String(State.highScore));
+  }
   hudScore.textContent = `Score: ${State.score}`;
+  hudHigh.textContent = `Best: ${State.highScore}`;
   hudOvertakes.textContent = `Overtakes: ${State.overtakes}`;
   hudSpeed.textContent = `Speed: ${Math.round(State.speed)}`;
   hudLevel.textContent = `Level: ${State.level}`;
@@ -455,7 +466,8 @@ function drawStartOrGameOverText(){
     ctx.font = '700 26px Orbitron, sans-serif';
     ctx.fillText('Crash! Game Over', vw/2, vh*0.4);
     ctx.font = '400 16px Orbitron, sans-serif';
-    ctx.fillText('Press Enter or Tap to Retry', vw/2, vh*0.46);
+    ctx.fillText(`Score ${State.score}  •  Best ${State.highScore}`, vw/2, vh*0.46);
+    ctx.fillText('Press Enter or Tap to Retry', vw/2, vh*0.52);
   }
   ctx.restore();
 }
