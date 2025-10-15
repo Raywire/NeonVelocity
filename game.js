@@ -207,6 +207,21 @@ function aabb(a, b){
   return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
 }
 
+// Returns true if the player's body overlaps a green boundary line segment horizontally
+function isOnGreenBoundary(player){
+  const laneWidth = (vw - State.lanePadding * 2) / State.laneCount;
+  const threshold = 6; // px tolerance to consider "riding" the line
+  const playerLeft = player.x;
+  const playerRight = player.x + player.w;
+  for (let i = 0; i <= State.laneCount; i++){
+    const x = Math.floor(State.lanePadding + i * laneWidth) + 0.5;
+    const lineLeft = x - threshold;
+    const lineRight = x + threshold;
+    if (playerRight > lineLeft && playerLeft < lineRight) return true;
+  }
+  return false;
+}
+
 // Update loop
 let lastTs = 0;
 function frame(ts){
@@ -283,7 +298,9 @@ function update(dt){
     if (!r.passed && r.y < p.y){
       r.passed = true;
       State.overtakes += 1;
-      State.score += 100 + Math.floor(State.speed * 0.2);
+      const onLine = isOnGreenBoundary(p);
+      const pts = 100 + Math.floor(State.speed * 0.2);
+      State.score += onLine ? Math.floor(pts * 0.5) : pts;
     }
   }
 
@@ -308,7 +325,9 @@ function update(dt){
       State.powerups.splice(i,1);
       if (u.kind === 'turbo') p.turboUntil = State.time + 3;
       if (u.kind === 'ghost') p.ghostUntil = State.time + 3;
-      State.score += 50; // reward pickups
+      const onLine = isOnGreenBoundary(p);
+      const pts = 50;
+      State.score += onLine ? Math.floor(pts * 0.5) : pts; // reward pickups
     }
   }
 
@@ -339,7 +358,11 @@ function update(dt){
 
   // HUD
   // passive score: distance and speed factor
-  State.score += Math.floor(State.speed * 0.04);
+  {
+    const onLine = isOnGreenBoundary(p);
+    const pts = Math.floor(State.speed * 0.04);
+    State.score += onLine ? Math.floor(pts * 0.5) : pts;
+  }
   if (State.score > State.highScore){
     State.highScore = State.score;
     localStorage.setItem('neon-velocity:highScore', String(State.highScore));
