@@ -40,6 +40,8 @@ const State = {
   rivals: [],
   particles: [],
   powerups: [],
+  boulders: [],
+  boulderCooldowns: [],
   activePowerup: null,
   trackOffset: 0
 };
@@ -105,6 +107,24 @@ function spawnPowerup(){
   };
 }
 
+function spawnBoulder(){
+  const laneWidth = (vw - State.lanePadding * 2) / State.laneCount;
+  const boundaryCount = State.laneCount + 1;
+  const i = Math.floor(rand(0, boundaryCount));
+  if (State.time < (State.boulderCooldowns[i] || 0)) return null;
+  const radius = rand(10, 18);
+  const lineX = Math.floor(State.lanePadding + i * laneWidth);
+  return {
+    type: 'boulder',
+    i,
+    x: lineX - radius,
+    y: -60,
+    w: radius * 2,
+    h: radius * 2,
+    r: radius
+  };
+}
+
 function resetGame(){
   State.isRunning = false;
   State.isGameOver = false;
@@ -119,8 +139,10 @@ function resetGame(){
   State.rivals.length = 0;
   State.powerups.length = 0;
   State.particles.length = 0;
+  State.boulders.length = 0;
   State.activePowerup = null;
   State.trackOffset = 0;
+  State.boulderCooldowns = new Array(State.laneCount + 1).fill(0);
 }
 
 resetGame();
@@ -228,12 +250,21 @@ function update(dt){
   if (Math.random() < 0.9 * dt){ State.obstacles.push(spawnObstacle()); }
   if (Math.random() < 0.8 * dt){ State.rivals.push(spawnRival()); }
   if (Math.random() < 0.15 * dt){ State.powerups.push(spawnPowerup()); }
+  // Boundary boulders on green lane lines to prevent dead zones
+  if (Math.random() < 0.35 * dt){
+    const b = spawnBoulder();
+    if (b){
+      State.boulders.push(b);
+      State.boulderCooldowns[b.i] = State.time + rand(1.6, 3.2);
+    }
+  }
 
   // Move entities
   const roadVy = State.speed; // world moves downward
   for (const o of State.obstacles){ o.y += roadVy * dt; }
   for (const r of State.rivals){ r.y += (roadVy + r.vy) * dt; }
   for (const u of State.powerups){ u.y += roadVy * dt; }
+  for (const b of State.boulders){ b.y += roadVy * dt; }
   // Particles
   for (const part of State.particles){
     part.y += part.vy * dt;
@@ -245,6 +276,7 @@ function update(dt){
   State.obstacles = State.obstacles.filter(o => o.y < vh + 60);
   State.rivals = State.rivals.filter(r => r.y > -120);
   State.powerups = State.powerups.filter(u => u.y < vh + 60);
+  State.boulders = State.boulders.filter(b => b.y < vh + 60);
 
   // Overtakes scoring
   for (const r of State.rivals){
@@ -263,6 +295,9 @@ function update(dt){
     }
     for (const r of State.rivals){
       if (aabb(p, r)) return gameOver();
+    }
+    for (const b of State.boulders){
+      if (aabb(p, b)) return gameOver();
     }
   }
 
@@ -331,10 +366,26 @@ function render(){
   for (const o of State.obstacles) drawObstacle(o);
   for (const r of State.rivals) drawRival(r);
   for (const u of State.powerups) drawPowerup(u);
+  for (const b of State.boulders) drawBoulder(b);
   drawParticles();
 
   drawCenterVignette();
   drawStartOrGameOverText();
+}
+
+function drawBoulder(b){
+  ctx.save();
+  ctx.fillStyle = 'rgba(124,255,0,0.85)';
+  ctx.beginPath();
+  ctx.arc(b.x + b.r, b.y + b.r, b.r, 0, Math.PI * 2);
+  ctx.fill();
+  // subtle outline
+  ctx.strokeStyle = 'rgba(0,255,240,0.7)';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.arc(b.x + b.r, b.y + b.r, b.r + 1, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.restore();
 }
 
 function drawTrack(){
